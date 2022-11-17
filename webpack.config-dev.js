@@ -20,7 +20,8 @@ module.exports = merge(common, {
         static: path.resolve(appDirectory), //tells webpack to serve from the app directory
         compress: true,
         hot: true,
-        host: 'local-ip',
+        host,
+        // host: 'local-ip',
         
         open: true,
         devMiddleware: {
@@ -28,7 +29,7 @@ module.exports = merge(common, {
         },
 
         //enable the use of WebXR
-        server: "https"
+        server: "http"
     }
 });
 

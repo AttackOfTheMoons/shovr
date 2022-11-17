@@ -1,8 +1,3 @@
-# Virtual Locomotion
-
-## Topics
-
-1. View-directed steering
-2. Hand-directed steering
-3. Smooth turn
-4. Simple teleportation
+Third party assets:
+- https://www.cgtrader.com/items/3104459/
+- https://www.cgtrader.com/free-3d-models/science/laboratory/cosmetic-lab

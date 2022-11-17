@@ -29,6 +29,14 @@ import { Quaternion } from "@babylonjs/core/Maths/math.vector";
 // Side effects
 import "@babylonjs/core/Helpers/sceneHelpers";
 import "@babylonjs/inspector";
+import '@babylonjs/core/Debug/debugLayer';
+
+import '@babylonjs/loaders/glTF/2.0/glTFLoader';
+import '@babylonjs/loaders/STL/stlFileLoader';
+import '@babylonjs/loaders/OBJ/objFileLoader';
+import { AssetsManager } from "@babylonjs/core/Misc/assetsManager";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { PointerInfo, PointerEventTypes, Mesh } from "@babylonjs/core";
 
 enum LocomotionMode
 {
@@ -133,6 +141,45 @@ class Game
         // Create points for the laser pointer
         
         this.scene.debugLayer.show();
+
+        const assetsManager = new AssetsManager(this.scene);
+
+        const rollingChair = assetsManager.addMeshTask('rollingchairTask', ['bottom frame', 'leather', 'leggy', 'metal frame'], 'assets/', 'uploads_files_3104459_office+chair.glb');
+        rollingChair.onSuccess = (task) => {
+            task.loadedMeshes[0].name = 'Rolling Chair';
+            task.loadedMeshes[0].scaling = new Vector3(1.5,1.5,1.5);
+        }
+
+        const room = new TransformNode('lab room');
+        room.scaling = new Vector3(0.05, 0.05, 0.05);
+        room.rotation = new Vector3(Math.PI / 2, 0, 0);
+        const roomTask = assetsManager.addMeshTask('roomTask', null, 'assets/', 'lab.glb');
+        roomTask.onSuccess = (task) => {
+            task.loadedMeshes.forEach((mesh, index) => {
+                mesh.parent = room;
+            });
+            task.loadedMeshes[2].dispose();
+        }
+
+        this.scene.onPointerObservable.add((pointerInfo) => {
+            // this.processPointer(pointerInfo);
+        });
+
+        assetsManager.load();
+    }
+
+    private processPointer(pointerInfo: PointerInfo)
+    {
+        switch (pointerInfo.type) {
+        case PointerEventTypes.POINTERDOWN:
+            if (pointerInfo.pickInfo?.hit) {
+                if (pointerInfo.pickInfo.pickedMesh !== null) {
+                    console.log(pointerInfo.pickInfo.pickedMesh.name);
+                    pointerInfo.pickInfo.pickedMesh.isVisible = false;
+                }
+            }
+            break;
+        }
     }
 
     // The main update loop will be executed once per frame before the scene is rendered
