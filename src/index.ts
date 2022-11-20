@@ -18,7 +18,7 @@ import { WebXRCamera } from "@babylonjs/core/XR/webXRCamera";
 import { PointLight } from "@babylonjs/core/Lights/pointLight";
 import { Logger } from "@babylonjs/core/Misc/logger";
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import {MeshBuilder} from  "@babylonjs/core/Meshes/meshBuilder";
+import { MeshBuilder } from  "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { LinesMesh } from "@babylonjs/core/Meshes/linesMesh";
 import { Ray } from "@babylonjs/core/Culling/ray";
@@ -55,6 +55,7 @@ class Game
     private xrCamera: WebXRCamera | null; 
     private leftController: WebXRInputSource | null;
     private rightController: WebXRInputSource | null;
+    private selectionTransform: TransformNode | null;
 
     private locomotionMode: LocomotionMode;
     private laserPointer: LinesMesh | null;
@@ -75,6 +76,7 @@ class Game
         this.xrCamera = null;
         this.leftController = null;
         this.rightController = null;
+        this.selectionTransform = null;
 
         this.laserPointer = null;
         this.groundMeshes = Array<AbstractMesh>();
@@ -181,9 +183,48 @@ class Game
             });
             task.loadedMeshes[2].dispose();
         }
+        
+        const shovel = SceneLoader.ImportMesh("", "assets/", "shovel.obj", this.scene, (meshes) => {
+            meshes[0].name = "shovel";
+            
+        });
+
+        xrHelper.input.onControllerAddedObservable.add((controller) => {
+            controller.onMeshLoadedObservable.addOnce((rootMesh) => {
+                if (controller.inputSource.handedness === "right") {
+                    var leftHand = shovel;
+                    
+                }
+            });
+        });
 
         this.scene.onPointerObservable.add((pointerInfo) => {
             // this.processPointer(pointerInfo);
+        });
+        
+        //Assigns controllers
+        xrHelper.input.onControllerAddedObservable.add((inputSource) => {
+            inputSource.onMeshLoadedObservable.addOnce((rootMesh) => {
+
+            if(inputSource.uniqueId.endsWith("left")) 
+            {
+                this.leftController = inputSource;
+            }
+            else 
+            {
+                this.rightController = inputSource;
+            }
+            });
+        });
+        
+        // Register event handler when controllers are added
+        xrHelper.input.onControllerAddedObservable.add((controller) => {
+            this.onControllerAdded(controller);
+        });
+
+        // Register event handler when controllers are removed
+        xrHelper.input.onControllerRemovedObservable.add((controller) => {
+            this.onControllerRemoved(controller);
         });
 
         assetsManager.load();
