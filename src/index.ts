@@ -26,6 +26,7 @@ import { Axis } from "@babylonjs/core/Maths/math.axis";
 import { Quaternion } from "@babylonjs/core/Maths/math.vector";
 
 
+
 // Side effects
 import "@babylonjs/core/Helpers/sceneHelpers";
 import "@babylonjs/inspector";
@@ -36,7 +37,7 @@ import '@babylonjs/loaders/STL/stlFileLoader';
 import '@babylonjs/loaders/OBJ/objFileLoader';
 import { AssetsManager } from "@babylonjs/core/Misc/assetsManager";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { PointerInfo, PointerEventTypes, Mesh } from "@babylonjs/core";
+import { PointerInfo, PointerEventTypes, Mesh, SceneLoader } from "@babylonjs/core";
 
 enum LocomotionMode
 {
@@ -119,7 +120,7 @@ class Game
         const environment = this.scene.createDefaultEnvironment({
             createGround: true,
             groundSize: 100,
-            skyboxSize: 50,
+            skyboxSize: 100000,
             skyboxColor: new Color3(0, 0, 0)
         });
 
@@ -141,6 +142,7 @@ class Game
         // Create points for the laser pointer
         
         this.scene.debugLayer.show();
+        let root = new TransformNode("root", this.scene);
 
         const assetsManager = new AssetsManager(this.scene);
 
@@ -148,11 +150,30 @@ class Game
         rollingChair.onSuccess = (task) => {
             task.loadedMeshes[0].name = 'Rolling Chair';
             task.loadedMeshes[0].scaling = new Vector3(1.5,1.5,1.5);
+            task.loadedMeshes[0].position.x = 10;
+            task.loadedMeshes[0].position.y = 10;
+            task.loadedMeshes[0].position.z = 10;
         }
+        SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
+
+            meshes[0].name = "pipe";
+            meshes[0].scaling = new Vector3(2, 2, 2);
+            meshes[0].rotation = new Vector3(0, Math.PI, 0);
+            meshes[0].position.y = 12;
+            meshes[0].position.x = 10;
+            meshes[0].position.z = 1;
+            meshes[0].parent = root;
+
+            let cannonMaterial = <StandardMaterial>meshes[0].material;
+            cannonMaterial.emissiveColor = new Color3(1, 1, 1);
+        });
 
         const room = new TransformNode('lab room');
         room.scaling = new Vector3(0.05, 0.05, 0.05);
         room.rotation = new Vector3(Math.PI / 2, 0, 0);
+        room.position.y = 10;
+        room.position.x = 10;
+        room.position.z = 10;
         const roomTask = assetsManager.addMeshTask('roomTask', null, 'assets/', 'lab.glb');
         roomTask.onSuccess = (task) => {
             task.loadedMeshes.forEach((mesh, index) => {
