@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-undef
 module.exports = {
     root: true,
     parser: '@typescript-eslint/parser',
@@ -14,10 +15,9 @@ module.exports = {
     },
 
     rules: {
-      'semi': 'error',
+      'semi': ['error', 'always'],
       'eqeqeq': 'error',
-      'no-nonnull':'off',
-      "@typescript-eslint/no-non-null-assertion": "warn",
-      'quotes': ['single', 'error']
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      'quotes': ['error', 'single']
     }
   };
