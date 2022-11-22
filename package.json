@@ -6,7 +6,9 @@
     "dependencies": {
         "@babylonjs/core": "^5.20.0",
         "@babylonjs/inspector": "^5.20.0",
-        "@babylonjs/materials": "^5.20.0"
+        "@babylonjs/materials": "^5.20.0",
+        "cannon": "^0.6.2",
+        "@types/cannon": "^0.1.4"
     },
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^5.33.1",
@@ -27,6 +29,6 @@
         "build": "npx webpack --config webpack.config-prod.js",
         "lint": "npx eslint . --ext .ts,.tsx"
     },
-  "author": "Regis Kopper <kopper@uncg.edu>",
+    "author": "Regis Kopper <kopper@uncg.edu>",
     "license": "CC BY-NC-SA 4.0"
 }
