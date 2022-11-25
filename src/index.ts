@@ -54,6 +54,7 @@ class Game
     private highlightLayer: HighlightLayer | null;
 
     private moveInDirection: Vector4;
+    private pipes: AbstractMesh | null;
 
     constructor()
     {
@@ -72,6 +73,7 @@ class Game
 
         this.shovel = null;
         this.rollingChair = null;
+        this.pipes = null;
         this.floor = null;
         this.previousPos = null;
         this.previousRot = null;
@@ -154,16 +156,14 @@ class Game
             // task.loadedMeshes[0].physicsImpostor = new PhysicsImpostor(task.loadedMeshes[0], PhysicsImpostor.BoxImpostor, {mass: 1}, this.scene);
             this.rollingChair = task.loadedMeshes[0];
         };
-        // SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
-
-        //     meshes[0].name = "pipe";
-        //     meshes[0].scaling = new Vector3(2, 2, 2);
-        //     meshes[0].rotation = new Vector3(0, Math.PI, 0);
-        //     meshes[0].position.y = 12;
-        //     meshes[0].position.x = 10;
-        //     meshes[0].position.z = 1;
-        //     meshes[0].parent = root;
-
+        const pipes = assetsManager.addMeshTask('breakpipes', null, 'assets/', 'pipe.glb');
+        pipes.onSuccess = (task) => {
+            task.loadedMeshes[0].name = 'Pipes';
+            task.loadedMeshes[0].scaling = new Vector3(.5,.5,.5);
+            task.loadedMeshes[0].rotation = new Vector3(0, 0, 0);
+            task.loadedMeshes[0].position = new Vector3(1, 1.6, -5.4); 
+            this.pipes = task.loadedMeshes[0];
+    };
         //     let cannonMaterial = <StandardMaterial>meshes[0].material;
         //     cannonMaterial.emissiveColor = new Color3(1, 1, 1);
         // });
