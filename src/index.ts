@@ -172,6 +172,7 @@ class Game
         room.scaling = Vector3.One().scale(.03);
         room.rotation = new Vector3(Math.PI / 2, 0, 0);
         const roomTask = assetsManager.addMeshTask('roomTask', null, 'assets/', 'lab.glb');
+
         roomTask.onSuccess = (task) => {
             task.loadedMeshes.forEach((mesh) => {
                 mesh.parent = room;
