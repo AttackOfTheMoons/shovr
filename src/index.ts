@@ -172,6 +172,7 @@ class Game
         room.scaling = Vector3.One().scale(.03);
         room.rotation = new Vector3(Math.PI / 2, 0, 0);
         const roomTask = assetsManager.addMeshTask('roomTask', null, 'assets/', 'lab.glb');
+
         roomTask.onSuccess = (task) => {
             task.loadedMeshes.forEach((mesh) => {
                 mesh.parent = room;
@@ -232,15 +233,15 @@ class Game
         if (this.moveInDirection.equals(Vector4.Zero())) {
             return;
         }
-        console.log(this.moveInDirection);
-        const percentTime = (this.scene.deltaTime / 1000)*-1 / this.moveInDirection.w; 
-        if (percentTime < .016) {
-            this.moveInDirection = Vector4.Zero();
+        else if (this.moveInDirection.w < this.scene.deltaTime /1000) {
+            // this.moveInDirection = Vector4.Zero();
             return;
         }
-        const impulse = this.moveInDirection.toVector3().scale(percentTime);
-        console.log('gliding', impulse, 'percentTime', percentTime);
-        this.moveInDirection.subtractInPlace(Vector4.FromVector3(impulse, this.scene.deltaTime));
+        const time = (this.scene.deltaTime / 1000);
+        // console.log('moveDir', this.moveInDirection, 'time passed', time);
+        const impulse = this.moveInDirection.toVector3().scale(time);
+        this.moveInDirection.w -= time;
+        // console.log('trying to move: ', impulse);
         if (this.rollingChair && this.xrCamera && this.rightController?.grip) {
             this.rollingChair.position.addInPlace(impulse);        
             this.xrCamera.position.addInPlace(impulse);
@@ -290,14 +291,19 @@ class Game
                     this.previousRot = this.rightController.grip.rotation.clone(); // using tangent for rotation when solving.
                 } else {
                     const impulse = this.previousPos.subtract(this.rightController.grip.position);
+                    // console.log('prevPos', this.previousPos, 'currPos', this.rightController.grip.position);
+                    if (impulse.x < .000001 && impulse.z < .000001) {
+                        return;
+                    }
                     //make sure not to go too high or too low.
                     impulse.y = 0; // Math.min(Math.abs(impulse.y), .01) * Math.pow(-1, +(impulse.y < 0));
                     // const rot = this.previousRot?.subtract(this.rightController.grip.rotation)
                     // this.rollingChair.physicsImpostor?.applyImpulse(impulse, this.rollingChair.position);
-                    const t = impulse.scale(9000);
+                    const t = impulse.scale(this.scene.deltaTime / 1000 * 5);
                     t.y = 0;
-                    this.moveInDirection.addInPlace(Vector4.FromVector3(t, 3));
-                    console.log(this.moveInDirection);
+                    t.x = Math.sqrt(t.x);
+                    t.z = Math.sqrt(t.z);
+                    this.moveInDirection.addInPlace(Vector4.FromVector3(t, this.scene.deltaTime / 1000 * 50));
                     this.rollingChair.position.addInPlace(impulse);
                     
                     this.xrCamera.position.addInPlace(impulse);
