@@ -33,6 +33,7 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
 import { WebXRControllerComponent } from '@babylonjs/core/XR/motionController/webXRControllerComponent';
 import { HighlightLayer } from '@babylonjs/core/Layers/highlightLayer';
+import { SceneLoader, StandardMaterial } from '@babylonjs/core';
 
 
 class Game 
@@ -141,7 +142,7 @@ class Game
         
         // this.scene.enablePhysics(new Vector3(0, 0, 0), new CannonJSPlugin(undefined, undefined, Cannon));
         this.scene.debugLayer.show();
-        // let root = new TransformNode("root", this.scene);
+        let root = new TransformNode("root", this.scene);
 
         const assetsManager = new AssetsManager(this.scene);
 
@@ -154,19 +155,19 @@ class Game
             // task.loadedMeshes[0].physicsImpostor = new PhysicsImpostor(task.loadedMeshes[0], PhysicsImpostor.BoxImpostor, {mass: 1}, this.scene);
             this.rollingChair = task.loadedMeshes[0];
         };
-        // SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
+        SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
 
-        //     meshes[0].name = "pipe";
-        //     meshes[0].scaling = new Vector3(2, 2, 2);
-        //     meshes[0].rotation = new Vector3(0, Math.PI, 0);
-        //     meshes[0].position.y = 12;
-        //     meshes[0].position.x = 10;
-        //     meshes[0].position.z = 1;
-        //     meshes[0].parent = root;
+            meshes[0].name = "pipe";
+            meshes[0].scaling = new Vector3(2, 2, 2);
+            meshes[0].rotation = new Vector3(0, Math.PI, 0);
+            meshes[0].position.y = 12;
+            meshes[0].position.x = 10;
+            meshes[0].position.z = 1;
+            meshes[0].parent = root;
 
-        //     let cannonMaterial = <StandardMaterial>meshes[0].material;
-        //     cannonMaterial.emissiveColor = new Color3(1, 1, 1);
-        // });
+            let cannonMaterial = <StandardMaterial>meshes[0].material;
+            cannonMaterial.emissiveColor = new Color3(1, 1, 1);
+        });
 
         const room = new TransformNode('lab room');
         room.scaling = Vector3.One().scale(.03);
@@ -184,20 +185,19 @@ class Game
             });
         };
         
-        // const shovelTask = assetsManager.addMeshTask("shovelTask", null, "assets/", "shovel.obj");
-
-        // shovelTask.onSuccess = (task) => {
-        //     task.loadedMeshes[0].name = "shovel";
-        // }
-
-        const shovelStandIn = MeshBuilder.CreateCylinder('shovelStandIn', {height: 1.25, diameter: .05}, this.scene);
-        shovelStandIn.position = new Vector3(0, 1.6, 0);
-        shovelStandIn.rotation.z = Math.PI / 2;
-
-        this.shovel = shovelStandIn;
-
-        this.highlightLayer = new HighlightLayer('highlighted', this.scene);
+        const shovel = new TransformNode("shovel");
+        shovel.rotation.x = Math.PI;
+        shovel.rotation.z = Math.PI / 2;
+        shovel.position = new Vector3(0.7, 1.3, 0);
         
+        const shovelTask = assetsManager.addMeshTask("shovelTask", null, "assets/", "shovel.glb");
+        shovelTask.onSuccess = (task) => {
+            task.loadedMeshes[0].name = "shovel";
+            task.loadedMeshes[0].scaling = new Vector3(0.2, 0.2, 0.2);
+            task.loadedMeshes[0].parent = shovel;
+        }
+        
+        this.highlightLayer = new HighlightLayer('highlighted', this.scene);
         
         //Assigns controllers
         xrHelper.input.onControllerAddedObservable.add((inputSource) => {
