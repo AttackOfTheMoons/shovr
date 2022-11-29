@@ -196,6 +196,8 @@ class Game
             task.loadedMeshes[0].parent = shovel;
         }
         
+
+        
         this.highlightLayer = new HighlightLayer('highlighted', this.scene);
         
         //Assigns controllers
