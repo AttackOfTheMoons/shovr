@@ -154,19 +154,20 @@ class Game
             // task.loadedMeshes[0].physicsImpostor = new PhysicsImpostor(task.loadedMeshes[0], PhysicsImpostor.BoxImpostor, {mass: 1}, this.scene);
             this.rollingChair = task.loadedMeshes[0];
         };
-        SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
+        
+        // SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
 
-            meshes[0].name = "pipe";
-            meshes[0].scaling = new Vector3(2, 2, 2);
-            meshes[0].rotation = new Vector3(0, Math.PI, 0);
-            meshes[0].position.y = 12;
-            meshes[0].position.x = 10;
-            meshes[0].position.z = 1;
-            meshes[0].parent = root;
+        //    meshes[0].name = "pipe";
+        //    meshes[0].scaling = new Vector3(2, 2, 2);
+        //    meshes[0].rotation = new Vector3(0, Math.PI, 0);
+        //    meshes[0].position.y = 12;
+        //    meshes[0].position.x = 10;
+        //    meshes[0].position.z = 1;
+        //    meshes[0].parent = root;
 
-            let cannonMaterial = <StandardMaterial>meshes[0].material;
-            cannonMaterial.emissiveColor = new Color3(1, 1, 1);
-        });
+        //    let cannonMaterial = <StandardMaterial>meshes[0].material;
+        //    cannonMaterial.emissiveColor = new Color3(1, 1, 1);
+        //});
 
         const room = new TransformNode('lab room');
         room.scaling = Vector3.One().scale(.03);
@@ -196,8 +197,6 @@ class Game
             task.loadedMeshes[0].parent = shovel;
         }
         
-
-        
         this.highlightLayer = new HighlightLayer('highlighted', this.scene);
         
         //Assigns controllers
@@ -217,8 +216,6 @@ class Game
 
         assetsManager.load();
     }
-
-    
 
     // The main update loop will be executed once per frame before the scene is rendered
     private update() : void
