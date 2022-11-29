@@ -48,8 +48,8 @@ class Game
     private shovel: Mesh | null;
     private rollingChair: AbstractMesh | null;
     private floor: AbstractMesh | null;
-    private previousPos: Vector3 | null;
-    private previousRot: Vector3 | null;
+    private previousGripPos: Vector3 | null;
+    private previousGripRot: Vector3 | null;
 
     private highlightLayer: HighlightLayer | null;
 
@@ -58,6 +58,7 @@ class Game
     private wallMeshes: Array<Mesh>;
 
     private rChair : TransformNode | null;
+    private prevChairAngle : number;
 
     constructor()
     {
@@ -77,14 +78,15 @@ class Game
         this.shovel = null;
         this.rollingChair = null;
         this.floor = null;
-        this.previousPos = null;
-        this.previousRot = null;
+        this.previousGripPos = null;
+        this.previousGripRot = null;
         this.moveInDirection = Vector4.Zero();
 
         this.highlightLayer = null;
         this.wallMeshes = [];
 
         this.rChair = null;
+        this.prevChairAngle = 0;
     }
 
     start() : void 
@@ -298,8 +300,8 @@ class Game
         }
         else if (!component.pressed) {
             this.shovel?.setParent(null);
-            this.previousPos = null;
-            this.previousRot = null;
+            this.previousGripPos = null;
+            this.previousGripRot = null;
             if (this.shovel) 
             {
                 this.highlightLayer?.removeMesh(this.shovel);
@@ -310,16 +312,13 @@ class Game
             {
                 //feedback for hitting the floor.
                 this.highlightLayer?.addMesh(this.shovel, Color3.Green());
-                if (this.previousPos === null) {
-                    this.previousPos = this.rightController.grip.position.clone();
-                    this.previousRot = this.rightController.grip.rotation.clone(); // using tangent for rotation when solving.
+                if (this.previousGripPos === null) {
+                    this.previousGripPos = this.rightController.grip.position.clone();
+                    this.previousGripRot = this.rightController.grip.rotation.clone(); // using tangent for rotation when solving.
                 } else {
-                    const impulse = this.previousPos.subtract(this.rightController.grip.position);
+                    const impulse = this.previousGripPos.subtract(this.rightController.grip.position);
                     // console.log('prevPos', this.previousPos, 'currPos', this.rightController.grip.position);
-                    if (impulse.x >= 0 && impulse.x <= .001 && impulse.z >= 0 && impulse.z <= .001) {
-                        return;
-                    }
-                    if (impulse.x <= 0 && impulse.x >= -.001 && impulse.z <= 0 && impulse.z >= .001) {
+                    if (Math.max(Math.abs(impulse.x), Math.abs(impulse.z)) < .001) {
                         return;
                     }
                     //make sure not to go too high or too low.
@@ -329,25 +328,28 @@ class Game
                     t.x = Math.sqrt(Math.abs(t.x)) * (t.x < 0 ? -1 : 1);
                     t.z = Math.sqrt(Math.abs(t.z)) * (t.z < 0 ? -1 : 1);
                     console.log('moveindirection1 increment', t);
-                    this.moveInDirection.addInPlace(Vector4.FromVector3(t, this.scene.deltaTime / 1000 * 3));
+                    // this.moveInDirection.addInPlace(Vector4.FromVector3(t, this.scene.deltaTime / 1000 * 3));
                     this.rChair.position.addInPlace(impulse);
                     let rot = Math.atan(impulse.x/impulse.z);
                     if (rot === 0 && impulse.z < 0) {
                         rot = Math.PI;
                     }
-                    this.rChair.rotation.y = Math.PI / 6 + rot;
+                    const currRot = Math.PI / 6 + rot;
+                    if (Math.round(currRot / (Math.PI / 4)) === Math.round(this.prevChairAngle / (Math.PI / 4)))
+                        this.rChair.rotation.y = currRot;
+                    this.prevChairAngle = currRot;
                     this.xrCamera.position.addInPlace(impulse);
                     this.rightController.grip.position.addInPlace(impulse);
                     // console.log('rotate', rot);
                     // console.log('pushing chair', impulse);
-                    this.previousPos = this.rightController.grip.position.clone();
-                    this.previousRot = this.rightController.grip.rotation.clone();
+                    this.previousGripPos = this.rightController.grip.position.clone();
+                    this.previousGripRot = this.rightController.grip.rotation.clone();
                     
                 }
             }
             else {
-                this.previousPos = null;
-                this.previousRot = null;
+                this.previousGripPos = null;
+                this.previousGripRot = null;
                 if (this.shovel) 
                 {
                     this.highlightLayer?.removeMesh(this.shovel);
