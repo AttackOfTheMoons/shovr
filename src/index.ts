@@ -54,6 +54,10 @@ class Game
     private highlightLayer: HighlightLayer | null;
 
     private moveInDirection: Vector4;
+    
+    private wallMeshes: Array<Mesh>;
+
+    private rChair : TransformNode | null;
 
     constructor()
     {
@@ -78,6 +82,9 @@ class Game
         this.moveInDirection = Vector4.Zero();
 
         this.highlightLayer = null;
+        this.wallMeshes = [];
+
+        this.rChair = null;
     }
 
     start() : void 
@@ -144,16 +151,18 @@ class Game
         // let root = new TransformNode("root", this.scene);
 
         const assetsManager = new AssetsManager(this.scene);
-
+        this.rChair = new TransformNode('chair parent', this.scene);
         const rollingChair = assetsManager.addMeshTask('rollingchairTask', ['bottom frame', 'leather', 'leggy', 'metal frame'], 'assets/', 'uploads_files_3104459_office+chair.glb');
         rollingChair.onSuccess = (task) => {
             task.loadedMeshes[0].name = 'Rolling Chair';
             task.loadedMeshes[0].scaling = new Vector3(1.85,1.85,1.85);
-            task.loadedMeshes[0].rotation = new Vector3(0, 27.3 / 180 * Math.PI, 0);
-            task.loadedMeshes[0].position = new Vector3(.6, -.25, .15); 
+            task.loadedMeshes[0].rotation = Vector3.Zero();
+            task.loadedMeshes[0].position = new Vector3(.5, -.25, .7); 
             // task.loadedMeshes[0].physicsImpostor = new PhysicsImpostor(task.loadedMeshes[0], PhysicsImpostor.BoxImpostor, {mass: 1}, this.scene);
             this.rollingChair = task.loadedMeshes[0];
+            this.rollingChair.parent = this.rChair;
         };
+        this.rChair.rotation.y = Math.PI / 6;
         // SceneLoader.ImportMesh("", "./assets/", "pipe.glb", this.scene, (meshes) => {
 
         //     meshes[0].name = "pipe";
@@ -192,7 +201,7 @@ class Game
         // }
 
         const shovelStandIn = MeshBuilder.CreateCylinder('shovelStandIn', {height: 1.25, diameter: .05}, this.scene);
-        shovelStandIn.position = new Vector3(0, 1.6, 0);
+        shovelStandIn.position = new Vector3(0, 1.6, 0.2);
         shovelStandIn.rotation.z = Math.PI / 2;
 
         this.shovel = shovelStandIn;
@@ -215,10 +224,13 @@ class Game
             });
         });
 
-        assetsManager.load();
-    }
+        const frontColliderMesh = MeshBuilder.CreateBox('frontCollide', {width: 10, depth: 1, height: 2}, this.scene);
+        frontColliderMesh.position = new Vector3(0, .14, 3.8);
+        frontColliderMesh.isVisible = false;
+        this.wallMeshes.push(frontColliderMesh);
 
-    
+        assetsManager.load();
+    }    
 
     // The main update loop will be executed once per frame before the scene is rendered
     private update() : void
@@ -233,19 +245,31 @@ class Game
         if (this.moveInDirection.equals(Vector4.Zero())) {
             return;
         }
-        else if (this.moveInDirection.w < this.scene.deltaTime /1000) {
+        else if (this.moveInDirection.w < this.scene.deltaTime / 1000) {
             // this.moveInDirection = Vector4.Zero();
             return;
         }
-        const time = (this.scene.deltaTime / 1000);
+        else if (Math.max(Math.abs(this.moveInDirection.x), Math.abs(this.moveInDirection.y), Math.abs(this.moveInDirection.z)) < .000001 ) {
+            return;
+        }
         // console.log('moveDir', this.moveInDirection, 'time passed', time);
-        const impulse = this.moveInDirection.toVector3().scale(time);
-        this.moveInDirection.w -= time;
-        // console.log('trying to move: ', impulse);
-        if (this.rollingChair && this.xrCamera && this.rightController?.grip) {
-            this.rollingChair.position.addInPlace(impulse);        
+        const impulse = this.moveInDirection.toVector3().scale(this.scene.deltaTime / 1000);
+        this.moveInDirection.w = Math.max(this.moveInDirection.w - this.scene.deltaTime / 1000, 0);
+        console.log('trying to move: ', this.moveInDirection);
+        if (this.rollingChair && this.xrCamera && this.rightController?.grip && this.rChair) {
+            const prevPoss = [this.rChair!.position, this.xrCamera!.position, this.rightController!.grip!.position];
+            this.rChair.position.addInPlace(impulse);        
             this.xrCamera.position.addInPlace(impulse);
             this.rightController.grip.position.addInPlace(impulse);
+            console.log('gliding!', impulse);
+            this.wallMeshes.forEach((mesh) => {
+                if (mesh.intersectsMesh(this.rollingChair!)) {
+                    this.moveInDirection.scaleInPlace(-.5);
+                    this.moveInDirection.w = .2;
+                    [this.rChair!.position, this.xrCamera!.position, this.rightController!.grip!.position] = prevPoss;
+                    console.log('hit wall!');
+                }
+            });
         }
     }
 
@@ -268,7 +292,7 @@ class Game
         if (component?.changes.pressed?.current) {
             if (this.shovel?.intersectsMesh(this.rightController.grip)) {
                 this.shovel.setParent(this.rightController.grip);
-                this.shovel.position = new Vector3(0, .36, .47);
+                this.shovel.position = new Vector3(0, -.38, -.42);
                 this.shovel.rotation = new Vector3(8.3, -80.39, -49.5).scale(Math.PI / 180);
             }
         }
@@ -282,7 +306,7 @@ class Game
             }
         }
         else if (component.pressed) {
-            if (this.shovel?.parent && this.floor?.intersectsMesh(this.shovel) && this.rollingChair && this.xrCamera && this.rightController?.grip)
+            if (this.shovel?.parent && this.floor?.intersectsMesh(this.shovel) && this.rChair && this.xrCamera && this.rightController?.grip)
             {
                 //feedback for hitting the floor.
                 this.highlightLayer?.addMesh(this.shovel, Color3.Green());
@@ -292,20 +316,26 @@ class Game
                 } else {
                     const impulse = this.previousPos.subtract(this.rightController.grip.position);
                     // console.log('prevPos', this.previousPos, 'currPos', this.rightController.grip.position);
-                    if (impulse.x < .000001 && impulse.z < .000001) {
+                    if (impulse.x >= 0 && impulse.x <= .001 && impulse.z >= 0 && impulse.z <= .001) {
+                        return;
+                    }
+                    if (impulse.x <= 0 && impulse.x >= -.001 && impulse.z <= 0 && impulse.z >= .001) {
                         return;
                     }
                     //make sure not to go too high or too low.
                     impulse.y = 0; // Math.min(Math.abs(impulse.y), .01) * Math.pow(-1, +(impulse.y < 0));
                     // const rot = this.previousRot?.subtract(this.rightController.grip.rotation)
-                    // this.rollingChair.physicsImpostor?.applyImpulse(impulse, this.rollingChair.position);
-                    const t = impulse.scale(this.scene.deltaTime / 1000 * 5);
-                    t.y = 0;
-                    t.x = Math.sqrt(t.x);
-                    t.z = Math.sqrt(t.z);
-                    this.moveInDirection.addInPlace(Vector4.FromVector3(t, this.scene.deltaTime / 1000 * 50));
-                    this.rollingChair.position.addInPlace(impulse);
-                    
+                    const t = impulse.scale(this.scene.deltaTime / 1000 * 500);
+                    t.x = Math.sqrt(Math.abs(t.x)) * (t.x < 0 ? -1 : 1);
+                    t.z = Math.sqrt(Math.abs(t.z)) * (t.z < 0 ? -1 : 1);
+                    console.log('moveindirection1 increment', t);
+                    this.moveInDirection.addInPlace(Vector4.FromVector3(t, this.scene.deltaTime / 1000 * 3));
+                    this.rChair.position.addInPlace(impulse);
+                    let rot = Math.atan(impulse.x/impulse.z);
+                    if (rot === 0 && impulse.z < 0) {
+                        rot = Math.PI;
+                    }
+                    this.rChair.rotation.y = Math.PI / 6 + rot;
                     this.xrCamera.position.addInPlace(impulse);
                     this.rightController.grip.position.addInPlace(impulse);
                     // console.log('rotate', rot);
